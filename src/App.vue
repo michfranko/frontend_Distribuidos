@@ -1,6 +1,6 @@
 <template>
-  <div class="container">
-    <h1>Subir recurso</h1>
+  <div id="app-container" class="container">
+    <h1>Subir Recurso</h1>
     <form @submit.prevent="submit" :aria-busy="loading">
       <div class="form-group">
         <label for="title">Título</label>
@@ -13,18 +13,32 @@
         />
       </div>
       <div class="form-group">
-        <label for="file">Archivo</label>
+        <label for="user_id">ID de Usuario</label>
         <input
-          id="file"
-          type="file"
-          @change="onFileChange"
+          id="user_id"
+          type="number"
+          v-model.number="user_id"
+          placeholder="ID del usuario que sube el recurso"
           required
-          ref="fileInput"
           :disabled="loading"
         />
       </div>
+      <div class="form-group">
+        <label for="category_id">ID de Categoría</label>
+        <select
+          id="category_id"
+          v-model="category_id"
+          required
+          :disabled="loading"
+        >
+          <option disabled value="">Seleccione una categoría</option>
+          <option v-for="category in categories" :key="category.id" :value="category.id">
+            {{ category.name }}
+          </option>
+        </select>
+      </div>
       <button type="submit" :disabled="loading">
-        {{ loading ? 'Subiendo...' : 'Subir' }}
+        {{ loading ? 'Guardando...' : 'Guardar Recurso' }}
       </button>
     </form>
 
@@ -33,60 +47,75 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const title = ref('')
-const file = ref(null)
-const fileInput = ref(null) // Ref for the file input element
+const user_id = ref(1) // Valor por defecto
+const category_id = ref('') // Valor por defecto para el select
+const categories = ref([]) // Para almacenar las categorías del backend
 const message = ref('')
 const messageType = ref('') // 'success' or 'error'
 const loading = ref(false)
 
-const onFileChange = (e) => {
-  file.value = e.target.files[0]
-}
+onMounted(async () => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
+    if (res.ok) {
+      categories.value = await res.json()
+    } else {
+      message.value = 'Error al cargar las categorías.'
+      messageType.value = 'error'
+    }
+  } catch (error) {
+    console.error('Error de red al cargar categorías:', error)
+    message.value = 'No se pudo conectar con el servidor para cargar categorías.'
+    messageType.value = 'error'
+  }
+})
 
 const resetForm = () => {
   title.value = ''
-  file.value = null
-  if (fileInput.value) {
-    fileInput.value.value = '' // This resets the file input
-  }
+  // user_id se podría resetear al del usuario logueado.
+  category_id.value = ''
 }
 
 const submit = async () => {
-  if (!file.value) {
-    message.value = 'Por favor, selecciona un archivo.'
-    messageType.value = 'error'
-    return
-  }
-
   loading.value = true
   message.value = ''
   messageType.value = ''
 
-  const form = new FormData()
-  form.append('title', title.value)
-  form.append('file', file.value)
-  form.append('user_id', 1) // TODO: This should be dynamic (e.g., from auth state)
-  form.append('category_id', 1)
+  // Construimos el objeto de datos que se enviará como JSON
+  const resourceData = {
+    title: title.value,
+    user_id: user_id.value,
+    category_id: category_id.value
+  }
 
   try {
     const res = await fetch(
       `${import.meta.env.VITE_API_URL}/api/resources`,
       {
         method: 'POST',
-        body: form
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(resourceData)
       }
     )
 
     if (res.ok) {
-      message.value = 'Archivo subido correctamente'
+      const responseData = await res.json()
+      message.value = responseData.message || 'Recurso guardado correctamente'
       messageType.value = 'success'
       resetForm()
     } else {
       const errorData = await res.json().catch(() => ({}))
-      message.value = errorData.message || `Error al subir el archivo (código: ${res.status})`
+      // Manejo de errores de validación de express-validator
+      if (errorData.errors) {
+        message.value = errorData.errors.map((e) => e.msg).join(' ');
+      } else {
+        message.value = errorData.message || `Error al guardar el recurso (código: ${res.status})`
+      }
       messageType.value = 'error'
     }
   } catch (error) {
@@ -97,10 +126,11 @@ const submit = async () => {
     loading.value = false
   }
 }
+
 </script>
 
 <style>
-.container {
+#app-container {
   max-width: 400px;
   margin: 0 auto;
   padding-top: 40px;
@@ -117,6 +147,7 @@ const submit = async () => {
 }
 
 input,
+select,
 button {
   width: 100%;
   padding: 0.5rem;
