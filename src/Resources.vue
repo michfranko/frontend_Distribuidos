@@ -24,6 +24,10 @@
           </option>
         </select>
       </div>
+      <div class="form-group">
+        <label for="file">Archivo (Opcional al editar)</label>
+        <input id="file" type="file" @change="handleFileChange" :required="!editingResource" :disabled="loading" />
+      </div>
       <div class="form-actions">
         <button type="submit" :disabled="loading">
           {{ loading ? 'Guardando...' : (editingResource ? 'Actualizar' : 'Guardar') }}
@@ -81,6 +85,7 @@ const form = ref({
   category_id: '',
 });
 const editingResource = ref(null);
+const file = ref(null);
 const message = ref('');
 const messageType = ref('');
 const loading = ref(false);
@@ -113,9 +118,17 @@ onMounted(() => {
   fetchCategories();
 });
 
+const handleFileChange = (event) => {
+  file.value = event.target.files[0] || null;
+};
+
 const resetForm = () => {
   form.value = { filename: '', user_id: null, category_id: '' };
   editingResource.value = null;
+  file.value = null;
+  // Reset the file input visually if needed
+  const fileInput = document.getElementById('file');
+  if (fileInput) fileInput.value = '';
 };
 
 const submit = async () => {
@@ -127,11 +140,20 @@ const submit = async () => {
     ? `${API_URL}/api/resources/${editingResource.value.id}` 
     : `${API_URL}/api/resources`;
 
+  const formData = new FormData();
+  formData.append('filename', form.value.filename);
+  formData.append('user_id', form.value.user_id);
+  formData.append('category_id', form.value.category_id);
+  
+  // Append file only if it exists
+  if (file.value) {
+    formData.append('resourceFile', file.value); // 'resourceFile' es el nombre que el backend esperará
+  }
+
   try {
     const res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value),
+      body: formData, // No se necesita 'Content-Type', el navegador lo establece automáticamente para FormData
     });
 
     const data = await res.json();
@@ -160,6 +182,8 @@ const editResource = (resource) => {
     user_id: resource.user_id,
     category_id: resource.category_id
   };
+  // Clear previous file selection when starting an edit
+  file.value = null;
   window.scrollTo(0, 0);
 };
 
