@@ -147,7 +147,7 @@ const submit = async () => {
   
   // Append file only if it exists
   if (file.value) {
-    formData.append('resourceFile', file.value); // 'resourceFile' es el nombre que el backend esperará
+    formData.append('file', file.value); // 'file' es el nombre que el backend (multer) espera
   }
 
   try {
