@@ -1,140 +1,46 @@
 <template>
   <div id="app-container" class="container">
-    <h1>Subir Recurso</h1>
-    <form @submit.prevent="submit" :aria-busy="loading">
-      <div class="form-group">
-        <label for="title">Título</label>
-        <input
-          id="title"
-          v-model="title"
-          placeholder="Título del recurso"
-          required
-          :disabled="loading"
-        />
-      </div>
-      <div class="form-group">
-        <label for="user_id">ID de Usuario</label>
-        <input
-          id="user_id"
-          type="number"
-          v-model.number="user_id"
-          placeholder="ID del usuario que sube el recurso"
-          required
-          :disabled="loading"
-        />
-      </div>
-      <div class="form-group">
-        <label for="category_id">ID de Categoría</label>
-        <select
-          id="category_id"
-          v-model="category_id"
-          required
-          :disabled="loading"
-        >
-          <option disabled value="">Seleccione una categoría</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">
-            {{ category.name }}
-          </option>
-        </select>
-      </div>
-      <button type="submit" :disabled="loading">
-        {{ loading ? 'Guardando...' : 'Guardar Recurso' }}
-      </button>
-    </form>
-
-    <p v-if="message" :class="['message', messageType]">{{ message }}</p>
+    <nav class="main-nav">
+      <router-link to="/resources">Recursos</router-link>
+      <router-link to="/categories">Categorías</router-link>
+      <router-link to="/users">Usuarios</router-link>
+      <router-link to="/logs">Logs</router-link>
+    </nav>
+    <main>
+      <router-view />
+    </main>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
-
-const title = ref('')
-const user_id = ref(1) // Valor por defecto
-const category_id = ref('') // Valor por defecto para el select
-const categories = ref([]) // Para almacenar las categorías del backend
-const message = ref('')
-const messageType = ref('') // 'success' or 'error'
-const loading = ref(false)
-
-onMounted(async () => {
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
-    if (res.ok) {
-      categories.value = await res.json()
-    } else {
-      message.value = 'Error al cargar las categorías.'
-      messageType.value = 'error'
-    }
-  } catch (error) {
-    console.error('Error de red al cargar categorías:', error)
-    message.value = 'No se pudo conectar con el servidor para cargar categorías.'
-    messageType.value = 'error'
-  }
-})
-
-const resetForm = () => {
-  title.value = ''
-  // user_id se podría resetear al del usuario logueado.
-  category_id.value = ''
-}
-
-const submit = async () => {
-  loading.value = true
-  message.value = ''
-  messageType.value = ''
-
-  // Construimos el objeto de datos que se enviará como JSON
-  const resourceData = {
-    title: title.value,
-    user_id: user_id.value,
-    category_id: category_id.value
-  }
-
-  try {
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/resources`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(resourceData)
-      }
-    )
-
-    if (res.ok) {
-      const responseData = await res.json()
-      message.value = responseData.message || 'Recurso guardado correctamente'
-      messageType.value = 'success'
-      resetForm()
-    } else {
-      const errorData = await res.json().catch(() => ({}))
-      // Manejo de errores de validación de express-validator
-      if (errorData.errors) {
-        message.value = errorData.errors.map((e) => e.msg).join(' ');
-      } else {
-        message.value = errorData.message || `Error al guardar el recurso (código: ${res.status})`
-      }
-      messageType.value = 'error'
-    }
-  } catch (error) {
-    console.error('Error en la subida:', error)
-    message.value = 'Error de red. No se pudo conectar con el servidor.'
-    messageType.value = 'error'
-  } finally {
-    loading.value = false
-  }
-}
-
-</script>
+<script setup></script>
 
 <style>
 #app-container {
-  max-width: 400px;
+  max-width: 800px;
   margin: 0 auto;
-  padding-top: 40px;
+  padding: 20px;
   font-family: sans-serif;
+}
+
+.main-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.main-nav a {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.main-nav a.router-link-exact-active {
+  background-color: #007bff;
+  color: white;
 }
 
 .form-group {
@@ -185,5 +91,11 @@ button:disabled {
   background-color: #f8d7da;
   color: #721c24;
   border: 1px solid #f5c6cb;
+}
+
+/* Estilos para tablas que usaremos en las vistas */
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
 </style>
