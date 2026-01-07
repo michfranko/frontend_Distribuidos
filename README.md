@@ -2,6 +2,23 @@
 
 This template should help get you started developing with Vue 3 in Vite.
 
+## Infraestructura en Proxmox
+
+### Asignación de Direcciones IP
+
+- **Red de clientes (GNS3)**: 192.168.10.0/24, Gateway: 192.168.10.1
+- **Red de servidores (Proxmox)**: 192.168.20.0/24, Gateway: 192.168.20.2
+
+### Servidores en Proxmox
+- **Servidor Web** (frontend): 192.168.20.10
+- **Servidor de Aplicaciones** (backend): 192.168.20.20
+- **Servidor de Base de Datos**: 192.168.20.30
+
+### Comunicación
+- Clientes → Servidor Web (192.168.20.10)
+- Servidor Web → Servidor de Aplicaciones (192.168.20.20)
+- Servidor de Aplicaciones → Servidor de Base de Datos (192.168.20.30)
+
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).

@@ -4,7 +4,6 @@
       <router-link to="/resources">Recursos</router-link>
       <router-link to="/categories">Categorías</router-link>
       <router-link to="/users">Usuarios</router-link>
-      <router-link to="/logs">Logs</router-link>
     </nav>
     <main>
       <router-view />
@@ -54,6 +53,7 @@
 
 input,
 select,
+textarea,
 button {
   width: 100%;
   padding: 0.5rem;
